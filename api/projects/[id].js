@@ -1,4 +1,4 @@
-const formidable = require('formidable');
+const { formidable } = require('formidable');
 const fs = require('fs');
 const { put, del } = require('@vercel/blob');
 const { pool, ensureSchema } = require('../../lib/db');
@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
 
     const existing = rows[0];
     try {
-      if (existing.media_path) await del(existing.media_path);
+      if (existing.media_path && existing.media_type !== 'youtube') await del(existing.media_path);
       if (existing.thumbnail_path) await del(existing.thumbnail_path);
     } catch (_) { /* blob may already be gone, ignore */ }
 
@@ -65,7 +65,7 @@ module.exports = async function handler(req, res) {
         if (!videoId) return res.status(400).json({ error: 'Could not parse a YouTube video ID from that URL' });
         media_type = 'youtube';
         media_path = videoId;
-      } else if (mediaFile) {
+      } else if (mediaFile && mediaFile.size > 0) {
         media_type = VIDEO_EXT.test(mediaFile.originalFilename) ? 'video' : 'image';
         const buffer = fs.readFileSync(mediaFile.filepath);
         const blob = await put(`media/${Date.now()}-${mediaFile.originalFilename}`, buffer, {
@@ -75,7 +75,7 @@ module.exports = async function handler(req, res) {
       }
 
       const thumbFile = files.thumbnail?.[0];
-      if (thumbFile) {
+      if (thumbFile && thumbFile.size > 0) {
         const thumbBuffer = fs.readFileSync(thumbFile.filepath);
         const thumbBlob = await put(`media/thumb-${Date.now()}-${thumbFile.originalFilename}`, thumbBuffer, {
           access: 'public', contentType: thumbFile.mimetype

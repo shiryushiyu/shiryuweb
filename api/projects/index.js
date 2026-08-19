@@ -1,4 +1,4 @@
-const formidable = require('formidable');
+const { formidable } = require('formidable');
 const fs = require('fs');
 const { put } = require('@vercel/blob');
 const { pool, ensureSchema } = require('../../lib/db');
@@ -67,7 +67,7 @@ module.exports = async function handler(req, res) {
 
       let thumbnail_path = null;
       const thumbFile = files.thumbnail?.[0];
-      if (thumbFile) {
+      if (thumbFile && thumbFile.size > 0) {
         const thumbBuffer = fs.readFileSync(thumbFile.filepath);
         const thumbBlob = await put(
           `media/thumb-${Date.now()}-${thumbFile.originalFilename}`,
