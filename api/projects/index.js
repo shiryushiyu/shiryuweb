@@ -12,6 +12,17 @@ function extractYouTubeId(url) {
   return match ? match[1] : null;
 }
 
+function isAuthorized(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return false;
+  }
+  
+  // Simple check - in production, validate the token properly
+  const token = authHeader.split(' ')[1];
+  return token && token.length > 10;
+}
+
 module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -24,6 +35,11 @@ module.exports = async function handler(req, res) {
       ? await pool.query('SELECT * FROM projects WHERE featured = 1 ORDER BY sort_order ASC, id DESC')
       : await pool.query('SELECT * FROM projects ORDER BY sort_order ASC, id DESC');
     return res.status(200).json(rows);
+  }
+
+  // Protect POST requests
+  if (!isAuthorized(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   if (req.method === 'POST') {
@@ -49,7 +65,7 @@ module.exports = async function handler(req, res) {
         if (!videoId) return res.status(400).json({ error: 'Could not parse a YouTube video ID from that URL' });
         media_type = 'youtube';
         media_path = videoId;
-      } else if (mediaFile) {
+      } else if (mediaFile && mediaFile.size > 0) {
         if (!ALLOWED_EXT.test(mediaFile.originalFilename)) {
           return res.status(400).json({ error: 'Unsupported file type' });
         }

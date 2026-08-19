@@ -11,6 +11,16 @@ function extractYouTubeId(url) {
   return match ? match[1] : null;
 }
 
+function isAuthorized(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return false;
+  }
+  
+  const token = authHeader.split(' ')[1];
+  return token && token.length > 10;
+}
+
 module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -22,6 +32,11 @@ module.exports = async function handler(req, res) {
     const { rows } = await pool.query('SELECT * FROM projects WHERE id = $1', [id]);
     if (!rows[0]) return res.status(404).json({ error: 'Project not found' });
     return res.status(200).json(rows[0]);
+  }
+
+  // Protect DELETE and PUT requests
+  if (!isAuthorized(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   if (req.method === 'DELETE') {

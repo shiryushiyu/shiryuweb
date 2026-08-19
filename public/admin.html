@@ -16,15 +16,50 @@
   .del-btn{ font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:#ff6b6b; cursor:pointer; background:none; border:none; }
   .del-btn:hover{ text-decoration:underline; }
   .or-divider{ text-align:center; color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:0.8rem; margin:0.5rem 0; }
+  .login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  .login-box {
+    background: #111;
+    padding: 2rem;
+    border: 1px solid #333;
+    max-width: 400px;
+    width: 90%;
+  }
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">SHIRYU<span>.</span></div>
-  <nav><ul><li><a href="/">← Back to site</a></li></ul></nav>
-</header>
 
-<div class="admin-wrap">
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="eyebrow">Authentication Required</div>
+    <h2 style="font-family:'Unbounded',sans-serif; font-size:1.5rem; margin:0.8rem 0 1.5rem;">Enter Admin Password</h2>
+    <form id="loginForm">
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" required>
+      </div>
+      <button type="submit" class="btn primary">Login</button>
+      <p class="form-msg" id="loginMsg"></p>
+    </form>
+  </div>
+</div>
+
+<div class="admin-wrap" id="adminContent" style="display:none;">
+  <header>
+    <div class="logo">SHIRYU<span>.</span></div>
+    <nav><ul><li><a href="/">← Back to site</a></li><li><a href="#" id="logoutBtn">Logout</a></li></ul></nav>
+  </header>
+
   <div class="eyebrow">Admin</div>
   <h2 style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:2rem; margin:0.8rem 0 2.5rem;">Add to the archive</h2>
 
@@ -44,18 +79,23 @@
       <textarea id="description" name="description"></textarea>
     </div>
     
-    <div class="or-divider">— OR —</div>
+    <div class="or-divider">— CHOOSE ONE —</div>
     
     <div class="field">
-      <label for="youtube_url">YouTube URL (optional - use this instead of media file)</label>
+      <label for="youtube_url">YouTube URL</label>
       <input id="youtube_url" name="youtube_url" type="url" placeholder="https://www.youtube.com/watch?v=...">
     </div>
     
     <div class="or-divider">— OR —</div>
     
     <div class="field">
-      <label for="media">Media file (image or video - use this instead of YouTube URL)</label>
+      <label for="media">Media file (image or video)</label>
       <input id="media" name="media" type="file" accept="image/*,video/*">
+    </div>
+    
+    <div class="field">
+      <label for="thumbnail">Thumbnail (optional - for videos)</label>
+      <input id="thumbnail" name="thumbnail" type="file" accept="image/*">
     </div>
     
     <div class="row2">
@@ -72,11 +112,6 @@
       </div>
     </div>
     
-    <div class="field">
-      <label for="thumbnail">Thumbnail (optional - for videos)</label>
-      <input id="thumbnail" name="thumbnail" type="file" accept="image/*">
-    </div>
-    
     <button type="submit" class="btn primary" style="align-self:flex-start;">Upload piece</button>
     <p class="form-msg" id="uploadMsg"></p>
   </form>
@@ -91,33 +126,103 @@
 
 <script>
 const API = '/api';
+let authToken = sessionStorage.getItem('admin_auth');
+
+// Check if already authenticated
+if (authToken) {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('adminContent').style.display = 'block';
+  loadRows();
+}
+
+// Handle login
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const password = document.getElementById('password').value;
+  const msgEl = document.getElementById('loginMsg');
+  
+  try {
+    const res = await fetch(`${API}/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    
+    const data = await res.json();
+    if (res.ok) {
+      authToken = data.token;
+      sessionStorage.setItem('admin_auth', authToken);
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('adminContent').style.display = 'block';
+      loadRows();
+    } else {
+      msgEl.textContent = data.error || 'Invalid password';
+      msgEl.className = 'form-msg err';
+    }
+  } catch (err) {
+    msgEl.textContent = 'Login failed';
+    msgEl.className = 'form-msg err';
+  }
+});
+
+// Handle logout
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('admin_auth');
+  authToken = null;
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('adminContent').style.display = 'none';
+});
+
+// API helper with auth
+async function apiFetch(url, options = {}) {
+  if (!authToken) {
+    throw new Error('Not authenticated');
+  }
+  
+  options.headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${authToken}`
+  };
+  
+  const res = await fetch(url, options);
+  if (res.status === 401) {
+    sessionStorage.removeItem('admin_auth');
+    authToken = null;
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('adminContent').style.display = 'none';
+    throw new Error('Unauthorized');
+  }
+  return res;
+}
 
 async function loadRows(){
-  const res = await fetch(`${API}/projects`);
-  const projects = await res.json();
-  document.getElementById('rows').innerHTML = projects.map(p => `
-    <tr>
-      <td>${p.media_type === 'video'
-        ? `<video class="thumb" src="${p.media_path}" muted></video>`
-        : p.media_type === 'youtube'
-          ? `<div class="thumb" style="display:flex;align-items:center;justify-content:center;background:#000;">
-              <span style="color:#ff0000;font-size:1.2rem;">▶</span>
-            </div>`
-          : `<img class="thumb" src="${p.media_path}">`}</td>
-      <td>${p.title}</td>
-      <td>${p.media_type}</td>
-      <td>${p.tags || ''}</td>
-      <td><button class="del-btn" data-id="${p.id}">Delete</button></td>
-    </tr>
-  `).join('') || '<tr><td colspan="5">No pieces yet.</td></tr>';
+  try {
+    const res = await apiFetch(`${API}/projects`);
+    const projects = await res.json();
+    document.getElementById('rows').innerHTML = projects.map(p => `
+      <tr>
+        <td>${p.media_type === 'video'
+          ? `<video class="thumb" src="${p.media_path}" muted></video>`
+          : p.media_type === 'youtube'
+            ? `<img class="thumb" src="https://img.youtube.com/vi/${p.media_path}/hqdefault.jpg">`
+            : `<img class="thumb" src="${p.media_path}">`}</td>
+        <td>${p.title}</td>
+        <td>${p.media_type}</td>
+        <td>${p.tags || ''}</td>
+        <td><button class="del-btn" data-id="${p.id}">Delete</button></td>
+      </tr>
+    `).join('') || '<tr><td colspan="5">No pieces yet.</td></tr>';
 
-  document.querySelectorAll('.del-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if(!confirm('Delete this piece?')) return;
-      await fetch(`${API}/projects/${btn.dataset.id}`, { method: 'DELETE' });
-      loadRows();
+    document.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if(!confirm('Delete this piece?')) return;
+        await apiFetch(`${API}/projects/${btn.dataset.id}`, { method: 'DELETE' });
+        loadRows();
+      });
     });
-  });
+  } catch (err) {
+    console.error('Failed to load rows:', err);
+  }
 }
 
 document.getElementById('uploadForm').addEventListener('submit', async e => {
@@ -132,7 +237,7 @@ document.getElementById('uploadForm').addEventListener('submit', async e => {
   if (!fd.get('thumbnail').size) fd.delete('thumbnail');
   
   try{
-    const res = await fetch(`${API}/projects`, { method: 'POST', body: fd });
+    const res = await apiFetch(`${API}/projects`, { method: 'POST', body: fd });
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || 'Upload failed');
     msgEl.textContent = 'Uploaded: ' + data.title;
@@ -144,8 +249,6 @@ document.getElementById('uploadForm').addEventListener('submit', async e => {
     msgEl.className = 'form-msg err';
   }
 });
-
-loadRows();
 </script>
 </body>
 </html>

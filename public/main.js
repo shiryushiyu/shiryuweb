@@ -1,130 +1,192 @@
 const API = '/api';
 let projects = [];
-let activeFilter = 'all';
-let lightboxIndex = 0;
+let currentFilter = 'all';
+let lightboxIndex = -1;
 
-const grid = document.getElementById('grid');
-const filtersEl = document.getElementById('filters');
-
-async function loadProjects(){
-  try{
+async function loadProjects() {
+  try {
     const res = await fetch(`${API}/projects`);
+    if (!res.ok) throw new Error('Failed to fetch projects');
     projects = await res.json();
-    document.getElementById('statCount').textContent = projects.length;
     renderGrid();
-  }catch(err){
-    grid.innerHTML = `<div class="empty-state">Couldn't reach the archive API. Is the server running?</div>`;
+    updateStats();
+  } catch (err) {
+    console.error('Error loading projects:', err);
+    document.getElementById('grid').innerHTML = '<div class="empty-state">Failed to load projects</div>';
   }
 }
 
-function renderGrid(){
-  const filtered = activeFilter === 'all' ? projects : projects.filter(p => p.media_type === activeFilter);
-  if(filtered.length === 0){
-    grid.innerHTML = `<div class="empty-state">No pieces yet - add one from the admin panel.</div>`;
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  const filtered = projects.filter(p => {
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'image') return p.media_type === 'image';
+    if (currentFilter === 'video') return p.media_type === 'video' || p.media_type === 'youtube';
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-state">No pieces found</div>';
     return;
   }
-  grid.innerHTML = filtered.map((p, i) => `
-    <div class="card" data-id="${p.id}">
-      <span class="media-badge">${p.media_type}</span>
-      ${p.media_type === 'video'
-        ? `<video src="${p.media_path}" muted loop playsinline preload="metadata"></video>`
-        : `<img src="${p.media_path}" alt="${escapeHtml(p.title)}" loading="lazy">`}
-      <div class="card-info">
-        <div class="tag">${escapeHtml((p.tags||'').split(',')[0] || p.media_type)}</div>
-        <h3>${escapeHtml(p.title)}</h3>
+
+  grid.innerHTML = filtered.map((p) => {
+    const projectIndex = projects.indexOf(p);
+    const tags = p.tags ? p.tags.split(',').map(t => t.trim()).slice(0, 3).join(', ') : '';
+    
+    return `
+      <div class="card" onclick="openLightbox(${projectIndex})" role="button" tabindex="0" aria-label="View ${p.title}">
+        ${renderMediaThumbnail(p)}
+        <span class="media-badge">${p.media_type === 'youtube' ? 'video' : p.media_type}</span>
+        <div class="card-info">
+          <div class="tag">${tags || p.media_type}</div>
+          <h3>${escapeHtml(p.title)}</h3>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
+}
 
-  grid.querySelectorAll('.card').forEach(card => {
-    const id = Number(card.dataset.id);
-    card.addEventListener('mouseenter', () => {
-      const v = card.querySelector('video');
-      if(v) v.play().catch(()=>{});
-    });
-    card.addEventListener('mouseleave', () => {
-      const v = card.querySelector('video');
-      if(v){ v.pause(); v.currentTime = 0; }
-    });
-    card.addEventListener('click', () => openLightbox(filtered.findIndex(p => p.id === id), filtered));
+function renderMediaThumbnail(p) {
+  if (p.media_type === 'youtube') {
+    return `
+      <div class="youtube-thumb">
+        <img src="https://img.youtube.com/vi/${p.media_path}/hqdefault.jpg" alt="${escapeHtml(p.title)}" loading="lazy">
+        <div class="play-button">▶</div>
+      </div>
+    `;
+  } else if (p.media_type === 'video') {
+    return `<video src="${p.media_path}" muted loop playsinline preload="metadata"></video>`;
+  } else {
+    return `<img src="${p.media_path}" alt="${escapeHtml(p.title)}" loading="lazy">`;
+  }
+}
+
+function updateStats() {
+  const countEl = document.getElementById('statCount');
+  if (countEl) countEl.textContent = projects.length;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderGrid();
   });
-}
-
-filtersEl.addEventListener('click', e => {
-  if(!e.target.matches('.filter-btn')) return;
-  filtersEl.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  e.target.classList.add('active');
-  activeFilter = e.target.dataset.filter;
-  renderGrid();
 });
 
-// ---------------- Lightbox ----------------
-const lightbox = document.getElementById('lightbox');
-const lightboxMedia = document.getElementById('lightboxMedia');
-let currentSet = [];
-
-function openLightbox(index, set){
-  currentSet = set;
+function openLightbox(index) {
   lightboxIndex = index;
-  renderLightbox();
+  const project = projects[index];
+  const lightbox = document.getElementById('lightbox');
+  const mediaContainer = document.getElementById('lightboxMedia');
+  const titleEl = document.getElementById('lbTitle');
+  const descEl = document.getElementById('lbDesc');
+  const tagEl = document.getElementById('lbTag');
+  
+  mediaContainer.innerHTML = renderLightboxMedia(project);
+  titleEl.textContent = project.title;
+  descEl.textContent = project.description || '';
+  tagEl.textContent = project.tags || project.media_type.toUpperCase();
+  
   lightbox.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
-function renderLightbox(){
-  const p = currentSet[lightboxIndex];
-  lightboxMedia.innerHTML = p.media_type === 'video'
-    ? `<video src="${p.media_path}" controls autoplay loop></video>`
-    : `<img src="${p.media_path}" alt="${escapeHtml(p.title)}">`;
-  document.getElementById('lbTag').textContent = (p.tags || p.media_type).split(',')[0];
-  document.getElementById('lbTitle').textContent = p.title;
-  document.getElementById('lbDesc').textContent = p.description || '';
+function renderLightboxMedia(p) {
+  if (p.media_type === 'youtube') {
+    return `
+      <iframe 
+        width="100%" 
+        height="500" 
+        src="https://www.youtube.com/embed/${p.media_path}" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen>
+      </iframe>
+    `;
+  } else if (p.media_type === 'video') {
+    return `<video src="${p.media_path}" controls autoplay loop></video>`;
+  } else {
+    return `<img src="${p.media_path}" alt="${escapeHtml(p.title)}">`;
+  }
 }
 
-document.getElementById('lightboxClose').addEventListener('click', () => lightbox.classList.remove('open'));
-lightbox.addEventListener('click', e => { if(e.target === lightbox) lightbox.classList.remove('open'); });
-document.getElementById('lbPrev').addEventListener('click', () => {
-  lightboxIndex = (lightboxIndex - 1 + currentSet.length) % currentSet.length;
-  renderLightbox();
-});
-document.getElementById('lbNext').addEventListener('click', () => {
-  lightboxIndex = (lightboxIndex + 1) % currentSet.length;
-  renderLightbox();
-});
-document.addEventListener('keydown', e => {
-  if(!lightbox.classList.contains('open')) return;
-  if(e.key === 'Escape') lightbox.classList.remove('open');
-  if(e.key === 'ArrowRight') document.getElementById('lbNext').click();
-  if(e.key === 'ArrowLeft') document.getElementById('lbPrev').click();
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightboxMedia').innerHTML = '';
+  document.body.style.overflow = '';
+}
+
+function navigateLightbox(direction) {
+  lightboxIndex += direction;
+  if (lightboxIndex < 0) lightboxIndex = projects.length - 1;
+  if (lightboxIndex >= projects.length) lightboxIndex = 0;
+  openLightbox(lightboxIndex);
+}
+
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+document.getElementById('lbPrev').addEventListener('click', () => navigateLightbox(-1));
+document.getElementById('lbNext').addEventListener('click', () => navigateLightbox(1));
+
+document.getElementById('lightbox').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    closeLightbox();
+  }
 });
 
-// ---------------- Contact form ----------------
-document.getElementById('contactForm').addEventListener('submit', async e => {
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') navigateLightbox(-1);
+  if (e.key === 'ArrowRight') navigateLightbox(1);
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const card = document.activeElement;
+    if (card && card.classList.contains('card')) {
+      e.preventDefault();
+      card.click();
+    }
+  }
+});
+
+document.getElementById('contactForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const form = e.target;
   const msgEl = document.getElementById('formMsg');
-  const payload = {
-    name: form.name.value,
-    email: form.email.value,
-    message: form.message.value
-  };
-  try{
-    const res = await fetch(`${API}/messages`, {
+  const formData = new FormData(e.target);
+  
+  try {
+    const res = await fetch(`${API}/contact`, {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formData.get('name'),
+        message: formData.get('message')
+      })
     });
-    if(!res.ok) throw new Error((await res.json()).error || 'Failed to send');
-    msgEl.textContent = 'Message sent — thank you.';
-    msgEl.className = 'form-msg ok';
-    form.reset();
-  }catch(err){
+    
+    const data = await res.json();
+    if (res.ok) {
+      msgEl.textContent = 'Message sent successfully!';
+      msgEl.className = 'form-msg ok';
+      e.target.reset();
+    } else {
+      throw new Error(data.error || 'Failed to send message');
+    }
+  } catch (err) {
     msgEl.textContent = err.message;
     msgEl.className = 'form-msg err';
   }
 });
-
-function escapeHtml(str=''){
-  return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
 
 loadProjects();
