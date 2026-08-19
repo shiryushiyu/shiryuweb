@@ -1,0 +1,16 @@
+{
+  "name": "portfolio-vercel",
+  "version": "1.0.0",
+  "description": "Portfolio site with Postgres + Vercel Blob, deployed on Vercel",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.8.0",
+    "formidable": "^3.5.4",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "vercel": "^37.0.0"
+  }
+}

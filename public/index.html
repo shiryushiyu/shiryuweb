@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shiryu — Visual Works</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">SHIRYU<span>.</span></div>
+  <nav>
+    <ul>
+      <li><a href="#work">Work</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="hero">
+  <canvas id="heroCanvas"></canvas>
+  <div class="eyebrow">Abstract · Digital · Motion</div>
+  <h1>Fields of <span class="grad">signal</span><br>and structure.</h1>
+  <p class="lede">A collection of abstract visual work built from noise, geometry, and light — rendered across image and motion.</p>
+  <div class="hero-actions">
+    <a href="#work" class="btn primary">View the work</a>
+    <a href="#contact" class="btn">Get in touch</a>
+  </div>
+  <div class="scroll-cue"><div class="line"></div>Scroll</div>
+</section>
+
+<section id="work">
+  <div class="section-head">
+    <div class="eyebrow">Selected work</div>
+    <h2>The gallery</h2>
+    <p>Pulled live from the archive — every piece below is served from the database, image or video.</p>
+  </div>
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="image">Images</button>
+    <button class="filter-btn" data-filter="video">Video</button>
+  </div>
+  <div class="grid" id="grid">
+    <div class="empty-state">Loading pieces…</div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="about-grid">
+    <div>
+      <div class="eyebrow">About</div>
+      <h2 style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:clamp(1.8rem,3.4vw,2.6rem); margin-top:0.8rem;">Working at the edge of structure and noise.</h2>
+      <p style="color:var(--muted); margin-top:1.2rem; line-height:1.7; max-width:52ch;">
+        I build abstract visual work exploring how order emerges from chaos — gradients, particle fields,
+        and geometric systems rendered as both still frames and motion pieces. Every piece here is stored,
+        tagged, and served through a small self-built archive.
+      </p>
+      <div class="stat-list">
+        <div class="stat"><span>Pieces archived</span><b id="statCount">—</b></div>
+        <div class="stat"><span>Format</span><b>Image / Video</b></div>
+        <div class="stat"><span>Palette</span><b>Cyan / Blue / Mono</b></div>
+      </div>
+    </div>
+    <div>
+      <div class="eyebrow">Process</div>
+      <p style="color:var(--muted); margin-top:1.2rem; line-height:1.9;">
+        Each piece begins as a system — a noise field, an attractor, a rule set — before it becomes an image.
+        The archive on this page is powered by a small Node/Express API backed by SQLite, so new work can be
+        pushed straight from the admin panel and appears here instantly.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="section-head">
+    <div class="eyebrow">Say hello</div>
+    <h2>Start a conversation</h2>
+    <p>Messages are saved straight to the archive's database.</p>
+  </div>
+  <form class="contact-form" id="contactForm">
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" required>
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required>
+    </div>
+    <div class="field">
+      <label for="message">Message</label>
+      <textarea id="message" name="message" required></textarea>
+    </div>
+    <button type="submit" class="btn primary" style="align-self:flex-start;">Send message</button>
+    <p class="form-msg" id="formMsg"></p>
+  </form>
+</section>
+
+<footer>
+  <div>© 2026 Shiryu — built with Express + SQLite</div>
+  <div><a href="/admin.html">Admin panel →</a></div>
+</footer>
+
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-close" id="lightboxClose">CLOSE ✕</div>
+  <div class="lightbox-nav prev" id="lbPrev">‹</div>
+  <div class="lightbox-nav next" id="lbNext">›</div>
+  <div class="lightbox-inner">
+    <div id="lightboxMedia"></div>
+    <div class="lightbox-caption">
+      <div>
+        <div class="eyebrow" id="lbTag">TAG</div>
+        <h3 id="lbTitle">Title</h3>
+      </div>
+      <p id="lbDesc">Description</p>
+    </div>
+  </div>
+</div>
+
+<script src="hero.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

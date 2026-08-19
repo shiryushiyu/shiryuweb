@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Archive</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .admin-wrap{ padding:8rem clamp(1.5rem,5vw,4rem) 5rem; max-width:900px; margin:0 auto; }
+  .admin-form{ display:flex; flex-direction:column; gap:1.2rem; margin-bottom:4rem; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+  table{ width:100%; border-collapse:collapse; font-size:0.85rem; }
+  th, td{ text-align:left; padding:0.8rem; border-bottom:1px solid var(--line); }
+  th{ font-family:'JetBrains Mono',monospace; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); }
+  .thumb{ width:60px; height:44px; object-fit:cover; border:1px solid var(--line); }
+  .del-btn{ font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:#ff6b6b; cursor:pointer; background:none; border:none; }
+  .del-btn:hover{ text-decoration:underline; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">SHIRYU<span>.</span></div>
+  <nav><ul><li><a href="/">← Back to site</a></li></ul></nav>
+</header>
+
+<div class="admin-wrap">
+  <div class="eyebrow">Admin</div>
+  <h2 style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:2rem; margin:0.8rem 0 2.5rem;">Add to the archive</h2>
+
+  <form class="admin-form" id="uploadForm">
+    <div class="row2">
+      <div class="field">
+        <label for="title">Title</label>
+        <input id="title" name="title" required>
+      </div>
+      <div class="field">
+        <label for="tags">Tags (comma separated)</label>
+        <input id="tags" name="tags" placeholder="noise, gradient, motion">
+      </div>
+    </div>
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea id="description" name="description"></textarea>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="media">Media file (image or video)</label>
+        <input id="media" name="media" type="file" accept="image/*,video/*" required>
+      </div>
+      <div class="field">
+        <label for="featured">Featured</label>
+        <select id="featured" name="featured" style="background:transparent;border:1px solid var(--line);color:var(--white);padding:0.9rem 1rem;">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn primary" style="align-self:flex-start;">Upload piece</button>
+    <p class="form-msg" id="uploadMsg"></p>
+  </form>
+
+  <div class="eyebrow">Archive</div>
+  <h2 style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:1.4rem; margin:0.8rem 0 1.5rem;">Existing pieces</h2>
+  <table>
+    <thead><tr><th></th><th>Title</th><th>Type</th><th>Tags</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<script>
+const API = '/api';
+
+async function loadRows(){
+  const res = await fetch(`${API}/projects`);
+  const projects = await res.json();
+  document.getElementById('rows').innerHTML = projects.map(p => `
+    <tr>
+      <td>${p.media_type === 'video'
+        ? `<video class="thumb" src="${p.media_path}" muted></video>`
+        : `<img class="thumb" src="${p.media_path}">`}</td>
+      <td>${p.title}</td>
+      <td>${p.media_type}</td>
+      <td>${p.tags || ''}</td>
+      <td><button class="del-btn" data-id="${p.id}">Delete</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5">No pieces yet.</td></tr>';
+
+  document.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if(!confirm('Delete this piece?')) return;
+      await fetch(`${API}/projects/${btn.dataset.id}`, { method: 'DELETE' });
+      loadRows();
+    });
+  });
+}
+
+document.getElementById('uploadForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const form = e.target;
+  const msgEl = document.getElementById('uploadMsg');
+  const fd = new FormData(form);
+  try{
+    const res = await fetch(`${API}/projects`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Upload failed');
+    msgEl.textContent = 'Uploaded: ' + data.title;
+    msgEl.className = 'form-msg ok';
+    form.reset();
+    loadRows();
+  }catch(err){
+    msgEl.textContent = err.message;
+    msgEl.className = 'form-msg err';
+  }
+});
+
+loadRows();
+</script>
+</body>
+</html>
