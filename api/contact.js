@@ -64,49 +64,34 @@ module.exports = async function handler(req, res) {
 async function sendDiscordNotification(name, message) {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
   
+  console.log('Webhook URL exists:', !!webhookUrl);
+  console.log('Webhook URL starts with:', webhookUrl ? webhookUrl.substring(0, 30) + '...' : 'none');
+  
   if (!webhookUrl) {
     console.log('Discord webhook not configured');
     return;
   }
 
   try {
-    const embed = {
-      title: '📬 New Contact Message',
-      color: 0x28e2ff,
-      fields: [
-        {
-          name: 'From',
-          value: name,
-          inline: true
-        },
-        {
-          name: 'Time',
-          value: new Date().toLocaleString(),
-          inline: true
-        },
-        {
-          name: 'Message',
-          value: message.length > 1024 ? message.substring(0, 1021) + '...' : message
-        }
-      ],
-      footer: {
-        text: 'Shiryu Portfolio Contact Form'
-      },
-      timestamp: new Date().toISOString()
-    };
-
+    console.log('Sending Discord notification...');
+    
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        embeds: [embed]
+        content: `**New Contact Message**\n\n**From:** ${name}\n**Time:** ${new Date().toLocaleString()}\n\n**Message:**\n${message}`
       })
     });
 
+    console.log('Discord response status:', response.status);
+    
     if (!response.ok) {
-      console.error('Discord webhook failed:', response.status);
+      const errorText = await response.text();
+      console.error('Discord webhook failed:', response.status, errorText);
+    } else {
+      console.log('Discord notification sent successfully');
     }
   } catch (err) {
     console.error('Error sending Discord notification:', err);
