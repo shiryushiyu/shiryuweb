@@ -49,7 +49,7 @@ module.exports = async function handler(req, res) {
     const sanitizedName = name.replace(/[<>]/g, '');
     const sanitizedMessage = message.replace(/[<>]/g, '');
 
-    await sendDiscordNotification(sanitizedName, sanitizedMessage, clientIp);
+    await sendDiscordNotification(sanitizedName, sanitizedMessage);
 
     return res.status(200).json({ 
       success: true, 
@@ -61,7 +61,7 @@ module.exports = async function handler(req, res) {
   }
 };
 
-async function sendDiscordNotification(name, message, ip) {
+async function sendDiscordNotification(name, message) {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
   
   if (!webhookUrl) {
@@ -77,11 +77,6 @@ async function sendDiscordNotification(name, message, ip) {
         {
           name: 'From',
           value: name,
-          inline: true
-        },
-        {
-          name: 'IP Address',
-          value: ip || 'Unknown',
           inline: true
         },
         {
