@@ -201,6 +201,14 @@ document.getElementById('contactForm')?.addEventListener('submit', async (e) => 
       msgEl.textContent = 'Message sent successfully!';
       msgEl.className = 'form-msg ok';
       e.target.reset();
+    } else if (res.status === 429) {
+      msgEl.textContent = data.error || 'Too many messages. Please wait and try again.';
+      msgEl.className = 'form-msg err';
+      
+      if (data.retryAfter) {
+        const minutes = Math.ceil(data.retryAfter / 60);
+        msgEl.textContent += ` (${minutes} minute${minutes > 1 ? 's' : ''})`;
+      }
     } else {
       throw new Error(data.error || 'Failed to send message');
     }

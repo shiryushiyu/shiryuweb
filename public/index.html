@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shiryu silly website</title>
+<title>Shiryu — Visual Works</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -81,11 +81,11 @@
   <form class="contact-form" id="contactForm">
     <div class="field">
       <label for="name">Name</label>
-      <input id="name" name="name" type="text" required>
+      <input id="name" name="name" type="text" required maxlength="100">
     </div>
     <div class="field">
       <label for="message">Message</label>
-      <textarea id="message" name="message" required></textarea>
+      <textarea id="message" name="message" required maxlength="2000"></textarea>
     </div>
     <button type="submit" class="btn primary" style="align-self:flex-start;">Send message</button>
     <p class="form-msg" id="formMsg"></p>
