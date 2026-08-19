@@ -20,7 +20,7 @@ async function loadProjects(){
 function renderGrid(){
   const filtered = activeFilter === 'all' ? projects : projects.filter(p => p.media_type === activeFilter);
   if(filtered.length === 0){
-    grid.innerHTML = `<div class="empty-state">No pieces yet — add one from the admin panel.</div>`;
+    grid.innerHTML = `<div class="empty-state">No pieces yet - add one from the admin panel.</div>`;
     return;
   }
   grid.innerHTML = filtered.map((p, i) => `
