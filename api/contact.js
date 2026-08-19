@@ -49,7 +49,7 @@ module.exports = async function handler(req, res) {
     const sanitizedName = name.replace(/[<>]/g, '');
     const sanitizedMessage = message.replace(/[<>]/g, '');
 
-    await sendDiscordNotification(sanitizedName, sanitizedMessage);
+    await sendDiscordDM(sanitizedName, sanitizedMessage);
 
     return res.status(200).json({ 
       success: true, 
@@ -61,23 +61,49 @@ module.exports = async function handler(req, res) {
   }
 };
 
-async function sendDiscordNotification(name, message) {
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+async function sendDiscordDM(name, message) {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  const userId = process.env.DISCORD_USER_ID;
   
-  console.log('Webhook URL exists:', !!webhookUrl);
-  console.log('Webhook URL starts with:', webhookUrl ? webhookUrl.substring(0, 30) + '...' : 'none');
+  console.log('Bot token exists:', !!botToken);
+  console.log('User ID exists:', !!userId);
   
-  if (!webhookUrl) {
-    console.log('Discord webhook not configured');
+  if (!botToken || !userId) {
+    console.log('Discord bot not configured');
     return;
   }
 
   try {
-    console.log('Sending Discord notification...');
+    console.log('Creating DM channel...');
     
-    const response = await fetch(webhookUrl, {
+    const dmResponse = await fetch('https://discord.com/api/v10/users/@me/channels', {
       method: 'POST',
       headers: {
+        'Authorization': `Bot ${botToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        recipient_id: userId
+      })
+    });
+
+    console.log('DM channel response:', dmResponse.status);
+    
+    if (!dmResponse.ok) {
+      const errorText = await dmResponse.text();
+      console.error('Failed to create DM channel:', errorText);
+      throw new Error(`Failed to create DM channel: ${dmResponse.status}`);
+    }
+
+    const dmChannel = await dmResponse.json();
+    console.log('DM channel created:', dmChannel.id);
+
+    console.log('Sending message...');
+    
+    const messageResponse = await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${botToken}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -85,15 +111,16 @@ async function sendDiscordNotification(name, message) {
       })
     });
 
-    console.log('Discord response status:', response.status);
+    console.log('Message response:', messageResponse.status);
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Discord webhook failed:', response.status, errorText);
-    } else {
-      console.log('Discord notification sent successfully');
+    if (!messageResponse.ok) {
+      const errorText = await messageResponse.text();
+      console.error('Failed to send DM:', errorText);
+      throw new Error(`Failed to send DM: ${messageResponse.status}`);
     }
+
+    console.log('Discord DM sent successfully');
   } catch (err) {
-    console.error('Error sending Discord notification:', err);
+    console.error('Error sending Discord DM:', err);
   }
 }
