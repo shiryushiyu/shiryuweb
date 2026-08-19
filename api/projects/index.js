@@ -7,6 +7,11 @@ const { setCors } = require('../../lib/cors');
 const ALLOWED_EXT = /\.(jpe?g|png|gif|webp|mp4|webm|mov)$/i;
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
 
+function extractYouTubeId(url) {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
 module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -34,19 +39,31 @@ module.exports = async function handler(req, res) {
 
       if (!title) return res.status(400).json({ error: 'title is required' });
 
+      const youtubeUrl = fields.youtube_url?.[0];
       const mediaFile = files.media?.[0];
-      if (!mediaFile) return res.status(400).json({ error: 'media file is required' });
-      if (!ALLOWED_EXT.test(mediaFile.originalFilename)) {
-        return res.status(400).json({ error: 'Unsupported file type' });
-      }
 
-      const media_type = VIDEO_EXT.test(mediaFile.originalFilename) ? 'video' : 'image';
-      const buffer = fs.readFileSync(mediaFile.filepath);
-      const blob = await put(
-        `media/${Date.now()}-${mediaFile.originalFilename}`,
-        buffer,
-        { access: 'public', contentType: mediaFile.mimetype }
-      );
+      let media_type, media_path;
+
+      if (youtubeUrl) {
+        const videoId = extractYouTubeId(youtubeUrl);
+        if (!videoId) return res.status(400).json({ error: 'Could not parse a YouTube video ID from that URL' });
+        media_type = 'youtube';
+        media_path = videoId;
+      } else if (mediaFile) {
+        if (!ALLOWED_EXT.test(mediaFile.originalFilename)) {
+          return res.status(400).json({ error: 'Unsupported file type' });
+        }
+        media_type = VIDEO_EXT.test(mediaFile.originalFilename) ? 'video' : 'image';
+        const buffer = fs.readFileSync(mediaFile.filepath);
+        const blob = await put(
+          `media/${Date.now()}-${mediaFile.originalFilename}`,
+          buffer,
+          { access: 'public', contentType: mediaFile.mimetype }
+        );
+        media_path = blob.url;
+      } else {
+        return res.status(400).json({ error: 'Provide either a media file or a YouTube URL' });
+      }
 
       let thumbnail_path = null;
       const thumbFile = files.thumbnail?.[0];
@@ -63,7 +80,7 @@ module.exports = async function handler(req, res) {
       const { rows } = await pool.query(
         `INSERT INTO projects (title, description, tags, media_type, media_path, thumbnail_path, featured, sort_order)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-        [title, description, tags, media_type, blob.url, thumbnail_path, featured, sort_order]
+        [title, description, tags, media_type, media_path, thumbnail_path, featured, sort_order]
       );
 
       return res.status(201).json(rows[0]);

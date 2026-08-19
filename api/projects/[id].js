@@ -6,6 +6,11 @@ const { setCors } = require('../../lib/cors');
 
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
 
+function extractYouTubeId(url) {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
 module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -52,8 +57,15 @@ module.exports = async function handler(req, res) {
       let media_path = existing.media_path;
       let thumbnail_path = existing.thumbnail_path;
 
+      const youtubeUrl = fields.youtube_url?.[0];
       const mediaFile = files.media?.[0];
-      if (mediaFile) {
+
+      if (youtubeUrl) {
+        const videoId = extractYouTubeId(youtubeUrl);
+        if (!videoId) return res.status(400).json({ error: 'Could not parse a YouTube video ID from that URL' });
+        media_type = 'youtube';
+        media_path = videoId;
+      } else if (mediaFile) {
         media_type = VIDEO_EXT.test(mediaFile.originalFilename) ? 'video' : 'image';
         const buffer = fs.readFileSync(mediaFile.filepath);
         const blob = await put(`media/${Date.now()}-${mediaFile.originalFilename}`, buffer, {
