@@ -164,6 +164,10 @@ document.getElementById('contactForm')?.addEventListener('submit', async (e) => 
   e.preventDefault();
   const msgEl = document.getElementById('formMsg');
   const formData = new FormData(e.target);
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Sending...';
   
   try {
     const res = await fetch(`${API}/contact`, {
@@ -175,7 +179,16 @@ document.getElementById('contactForm')?.addEventListener('submit', async (e) => 
       })
     });
     
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error('Response is not JSON:', text);
+      throw new Error('Server returned an invalid response');
+    }
+    
     if (res.ok) {
       msgEl.textContent = 'Message sent successfully!';
       msgEl.className = 'form-msg ok';
@@ -184,8 +197,12 @@ document.getElementById('contactForm')?.addEventListener('submit', async (e) => 
       throw new Error(data.error || 'Failed to send message');
     }
   } catch (err) {
+    console.error('Contact form error:', err);
     msgEl.textContent = err.message;
     msgEl.className = 'form-msg err';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Send message';
   }
 });
 
