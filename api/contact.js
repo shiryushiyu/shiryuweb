@@ -109,7 +109,30 @@ async function sendDiscordDM(name, message) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        content: `**New Contact Message**\n\n**From:** ${name}\n**Time:** ${new Date().toLocaleString()}\n\n**Message:**\n${message}`
+        embeds: [{
+          title: 'New Contact Message',
+          color: 0x28e2ff,
+          fields: [
+            {
+              name: 'From',
+              value: name,
+              inline: true
+            },
+            {
+              name: 'Time',
+              value: new Date().toLocaleString(),
+              inline: true
+            },
+            {
+              name: 'Message',
+              value: message.length > 1024 ? message.substring(0, 1021) + '...' : message
+            }
+          ],
+          footer: {
+            text: 'Shiryu Portfolio Contact Form'
+          },
+          timestamp: new Date().toISOString()
+        }]
       })
     });
 
@@ -148,7 +171,30 @@ async function sendDiscordWebhook(name, message) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        content: `**New Contact Message**\n\n**From:** ${name}\n**Time:** ${new Date().toLocaleString()}\n\n**Message:**\n${message}`
+        embeds: [{
+          title: 'New Contact Message',
+          color: 0x28e2ff,
+          fields: [
+            {
+              name: 'From',
+              value: name,
+              inline: true
+            },
+            {
+              name: 'Time',
+              value: new Date().toLocaleString(),
+              inline: true
+            },
+            {
+              name: 'Message',
+              value: message.length > 1024 ? message.substring(0, 1021) + '...' : message
+            }
+          ],
+          footer: {
+            text: 'Shiryu Portfolio Contact Form'
+          },
+          timestamp: new Date().toISOString()
+        }]
       })
     });
 
