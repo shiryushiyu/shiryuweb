@@ -15,11 +15,12 @@
   .thumb{ width:60px; height:44px; object-fit:cover; border:1px solid var(--line); }
   .del-btn{ font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:#ff6b6b; cursor:pointer; background:none; border:none; }
   .del-btn:hover{ text-decoration:underline; }
+  .or-divider{ text-align:center; color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:0.8rem; margin:0.5rem 0; }
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">le admin<span>.</span></div>
+  <div class="logo">SHIRYU<span>.</span></div>
   <nav><ul><li><a href="/">← Back to site</a></li></ul></nav>
 </header>
 
@@ -42,11 +43,22 @@
       <label for="description">Description</label>
       <textarea id="description" name="description"></textarea>
     </div>
+    
+    <div class="or-divider">— OR —</div>
+    
+    <div class="field">
+      <label for="youtube_url">YouTube URL (optional - use this instead of media file)</label>
+      <input id="youtube_url" name="youtube_url" type="url" placeholder="https://www.youtube.com/watch?v=...">
+    </div>
+    
+    <div class="or-divider">— OR —</div>
+    
+    <div class="field">
+      <label for="media">Media file (image or video - use this instead of YouTube URL)</label>
+      <input id="media" name="media" type="file" accept="image/*,video/*">
+    </div>
+    
     <div class="row2">
-      <div class="field">
-        <label for="media">Media file (image or video)</label>
-        <input id="media" name="media" type="file" accept="image/*,video/*" required>
-      </div>
       <div class="field">
         <label for="featured">Featured</label>
         <select id="featured" name="featured" style="background:transparent;border:1px solid var(--line);color:var(--white);padding:0.9rem 1rem;">
@@ -54,7 +66,17 @@
           <option value="1">Yes</option>
         </select>
       </div>
+      <div class="field">
+        <label for="sort_order">Sort Order</label>
+        <input id="sort_order" name="sort_order" type="number" value="0">
+      </div>
     </div>
+    
+    <div class="field">
+      <label for="thumbnail">Thumbnail (optional - for videos)</label>
+      <input id="thumbnail" name="thumbnail" type="file" accept="image/*">
+    </div>
+    
     <button type="submit" class="btn primary" style="align-self:flex-start;">Upload piece</button>
     <p class="form-msg" id="uploadMsg"></p>
   </form>
@@ -77,7 +99,11 @@ async function loadRows(){
     <tr>
       <td>${p.media_type === 'video'
         ? `<video class="thumb" src="${p.media_path}" muted></video>`
-        : `<img class="thumb" src="${p.media_path}">`}</td>
+        : p.media_type === 'youtube'
+          ? `<div class="thumb" style="display:flex;align-items:center;justify-content:center;background:#000;">
+              <span style="color:#ff0000;font-size:1.2rem;">▶</span>
+            </div>`
+          : `<img class="thumb" src="${p.media_path}">`}</td>
       <td>${p.title}</td>
       <td>${p.media_type}</td>
       <td>${p.tags || ''}</td>
@@ -99,6 +125,12 @@ document.getElementById('uploadForm').addEventListener('submit', async e => {
   const form = e.target;
   const msgEl = document.getElementById('uploadMsg');
   const fd = new FormData(form);
+  
+  // Remove empty fields
+  if (!fd.get('youtube_url')) fd.delete('youtube_url');
+  if (!fd.get('media').size) fd.delete('media');
+  if (!fd.get('thumbnail').size) fd.delete('thumbnail');
+  
   try{
     const res = await fetch(`${API}/projects`, { method: 'POST', body: fd });
     const data = await res.json();
