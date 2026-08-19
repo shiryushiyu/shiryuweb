@@ -69,7 +69,8 @@ async function sendDiscordDM(name, message) {
   console.log('User ID exists:', !!userId);
   
   if (!botToken || !userId) {
-    console.log('Discord bot not configured');
+    console.log('Discord bot not configured, falling back to webhook');
+    await sendDiscordWebhook(name, message);
     return;
   }
 
@@ -92,7 +93,8 @@ async function sendDiscordDM(name, message) {
     if (!dmResponse.ok) {
       const errorText = await dmResponse.text();
       console.error('Failed to create DM channel:', errorText);
-      throw new Error(`Failed to create DM channel: ${dmResponse.status}`);
+      await sendDiscordWebhook(name, message);
+      return;
     }
 
     const dmChannel = await dmResponse.json();
@@ -116,11 +118,49 @@ async function sendDiscordDM(name, message) {
     if (!messageResponse.ok) {
       const errorText = await messageResponse.text();
       console.error('Failed to send DM:', errorText);
-      throw new Error(`Failed to send DM: ${messageResponse.status}`);
+      await sendDiscordWebhook(name, message);
+      return;
     }
 
     console.log('Discord DM sent successfully');
   } catch (err) {
     console.error('Error sending Discord DM:', err);
+    await sendDiscordWebhook(name, message);
+  }
+}
+
+async function sendDiscordWebhook(name, message) {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  
+  console.log('Webhook URL exists:', !!webhookUrl);
+  
+  if (!webhookUrl) {
+    console.log('Discord webhook not configured');
+    return;
+  }
+
+  try {
+    console.log('Sending webhook notification...');
+    
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        content: `**New Contact Message**\n\n**From:** ${name}\n**Time:** ${new Date().toLocaleString()}\n\n**Message:**\n${message}`
+      })
+    });
+
+    console.log('Webhook response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Webhook failed:', response.status, errorText);
+    } else {
+      console.log('Webhook notification sent successfully');
+    }
+  } catch (err) {
+    console.error('Error sending webhook:', err);
   }
 }
