@@ -163,20 +163,29 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('contactForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const msgEl = document.getElementById('formMsg');
-  const formData = new FormData(e.target);
   const submitBtn = e.target.querySelector('button[type="submit"]');
+  
+  const name = document.getElementById('name').value.trim();
+  const message = document.getElementById('message').value.trim();
+  
+  if (!name || !message) {
+    msgEl.textContent = 'Please fill in all fields';
+    msgEl.className = 'form-msg err';
+    return;
+  }
   
   submitBtn.disabled = true;
   submitBtn.textContent = 'Sending...';
+  msgEl.textContent = '';
   
   try {
-    const res = await fetch(`${API}/contact`, {
+    const res = await fetch('/api/contact', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: formData.get('name'),
-        message: formData.get('message')
-      })
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ name, message })
     });
     
     const text = await res.text();
@@ -184,9 +193,8 @@ document.getElementById('contactForm')?.addEventListener('submit', async (e) => 
     
     try {
       data = JSON.parse(text);
-    } catch (parseError) {
-      console.error('Response is not JSON:', text);
-      throw new Error('Server returned an invalid response');
+    } catch (e) {
+      throw new Error('Server returned invalid response');
     }
     
     if (res.ok) {
@@ -197,8 +205,8 @@ document.getElementById('contactForm')?.addEventListener('submit', async (e) => 
       throw new Error(data.error || 'Failed to send message');
     }
   } catch (err) {
-    console.error('Contact form error:', err);
-    msgEl.textContent = err.message;
+    console.error('Error:', err);
+    msgEl.textContent = err.message || 'Failed to send message';
     msgEl.className = 'form-msg err';
   } finally {
     submitBtn.disabled = false;
