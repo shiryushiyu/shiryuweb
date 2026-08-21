@@ -31,10 +31,15 @@ async function sendDiscordDM(userId, name, message, owner) {
 
   const channel = await channelResponse.json();
 
-  const content =
-    `New message from your ${owner === 'allchemi' ? 'Allchemi' : 'Shiryu'} portfolio\n\n` +
-    `Name: ${name}\n\n` +
-    `Message:\n${message}`;
+  const portfolioName =
+    owner === 'allchemi'
+      ? 'Allchemi'
+      : 'Shiryu';
+
+  const color =
+    owner === 'allchemi'
+      ? 0x8B5CF6
+      : 0x3B82F6;
 
   const messageResponse = await fetch(
     `https://discord.com/api/v10/channels/${channel.id}/messages`,
@@ -45,7 +50,28 @@ async function sendDiscordDM(userId, name, message, owner) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        content,
+        embeds: [
+          {
+            title: `New message from ${portfolioName}`,
+            color,
+            fields: [
+              {
+                name: 'Name',
+                value: name.slice(0, 1024),
+                inline: false,
+              },
+              {
+                name: 'Message',
+                value: message.slice(0, 1024),
+                inline: false,
+              },
+            ],
+            footer: {
+              text: `${portfolioName} Portfolio`,
+            },
+            timestamp: new Date().toISOString(),
+          },
+        ],
       }),
     }
   );
