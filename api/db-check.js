@@ -27,27 +27,25 @@ module.exports = async function handler(req, res) {
     for (const owner of ['shiryu', 'allchemi']) {
       const pool = getPool(owner);
 
-      const db = await pool.query(`
-        SELECT
-          current_database() AS database,
-          current_schema() AS schema
-      `);
-
       const projects = await pool.query(`
         SELECT
-          COUNT(*)::int AS total,
-          COUNT(*) FILTER (WHERE owner = $1)::int AS owner_rows
+          id,
+          owner,
+          title,
+          media_type,
+          media_path,
+          thumbnail_path,
+          created_at
         FROM projects
-      `, [owner]);
+        ORDER BY id ASC
+      `);
 
       result[owner] = {
         connectionHost:
           owner === 'shiryu'
             ? getHost(process.env.POSTGRES_URL)
             : getHost(process.env.ALLCHEMI_POSTGRES_URL),
-        database: db.rows[0].database,
-        schema: db.rows[0].schema,
-        projects: projects.rows[0]
+        projects: projects.rows
       };
     }
 
