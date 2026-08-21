@@ -9,119 +9,592 @@
   .admin-wrap{ padding:8rem clamp(1.5rem,5vw,4rem) 5rem; max-width:900px; margin:0 auto; }
   .admin-form{ display:flex; flex-direction:column; gap:1.2rem; margin-bottom:4rem; }
   .row2{ display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+  .login-wrap{ max-width:420px; margin:10rem auto 0; padding:0 1.5rem; }
+  .login-form{ display:flex; flex-direction:column; gap:1.2rem; }
   table{ width:100%; border-collapse:collapse; font-size:0.85rem; }
   th, td{ text-align:left; padding:0.8rem; border-bottom:1px solid var(--line); }
   th{ font-family:'JetBrains Mono',monospace; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); }
   .thumb{ width:60px; height:44px; object-fit:cover; border:1px solid var(--line); }
   .del-btn{ font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:#ff6b6b; cursor:pointer; background:none; border:none; }
   .del-btn:hover{ text-decoration:underline; }
+  .hidden{ display:none !important; }
+  .auth-error{ color:#ff6b6b; font-size:0.85rem; }
 </style>
 </head>
 <body>
+
 <header>
   <div class="logo">AllChemi<span>.</span></div>
-  <nav><ul><li><a href="/allchemi/">← Back to site</a></li></ul></nav>
+  <nav>
+    <ul>
+      <li><a href="/allchemi/">← Back to site</a></li>
+    </ul>
+  </nav>
 </header>
 
-<div class="admin-wrap">
+<div class="login-wrap" id="loginPanel">
   <div class="eyebrow">Admin</div>
-  <h2 style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:2rem; margin:0.8rem 0 2.5rem;">Add to the archive</h2>
 
-  <form class="admin-form" id="uploadForm">
+  <h2 style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:2rem; margin:0.8rem 0 2.5rem;">
+    Sign in
+  </h2>
+
+  <form class="login-form" id="loginForm">
+
+    <div class="field">
+      <label for="username">Username</label>
+
+      <input
+        id="username"
+        name="username"
+        value="allchemi"
+        autocomplete="username"
+        required
+      >
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        required
+      >
+    </div>
+
+    <button
+      type="submit"
+      class="btn primary"
+    >
+      Sign in
+    </button>
+
+    <p
+      class="auth-error hidden"
+      id="loginError"
+    ></p>
+
+  </form>
+</div>
+
+<div class="admin-wrap hidden" id="adminPanel">
+
+  <div class="eyebrow">Admin</div>
+
+  <h2 style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:2rem; margin:0.8rem 0 2.5rem;">
+    Add to the archive
+  </h2>
+
+  <form
+    class="admin-form"
+    id="uploadForm"
+  >
+
     <div class="row2">
+
       <div class="field">
         <label for="title">Title</label>
-        <input id="title" name="title" required>
+        <input
+          id="title"
+          name="title"
+          required
+        >
       </div>
+
       <div class="field">
         <label for="tags">Tags (comma separated)</label>
-        <input id="tags" name="tags" placeholder="noise, gradient, motion">
+        <input
+          id="tags"
+          name="tags"
+          placeholder="noise, gradient, motion"
+        >
       </div>
+
     </div>
+
     <div class="field">
       <label for="description">Description</label>
-      <textarea id="description" name="description"></textarea>
+      <textarea
+        id="description"
+        name="description"
+      ></textarea>
     </div>
+
     <div class="row2">
+
       <div class="field">
         <label for="media">Media file (image or video)</label>
-        <input id="media" name="media" type="file" accept="image/*,video/*">
+        <input
+          id="media"
+          name="media"
+          type="file"
+          accept="image/*,video/*"
+        >
       </div>
+
       <div class="field">
         <label for="youtube_url">Or a YouTube URL</label>
-        <input id="youtube_url" name="youtube_url" type="url" placeholder="https://youtu.be/...">
+        <input
+          id="youtube_url"
+          name="youtube_url"
+          type="url"
+          placeholder="https://youtu.be/..."
+        >
       </div>
+
     </div>
+
     <div class="field">
       <label for="featured">Featured</label>
-      <select id="featured" name="featured" style="background:transparent;border:1px solid var(--line);color:var(--white);padding:0.9rem 1rem;">
+
+      <select
+        id="featured"
+        name="featured"
+        style="background:transparent;border:1px solid var(--line);color:var(--white);padding:0.9rem 1rem;"
+      >
         <option value="0">No</option>
         <option value="1">Yes</option>
       </select>
     </div>
-    <button type="submit" class="btn primary" style="align-self:flex-start;">Upload piece</button>
-    <p class="form-msg" id="uploadMsg"></p>
+
+    <button
+      type="submit"
+      class="btn primary"
+      style="align-self:flex-start;"
+    >
+      Upload piece
+    </button>
+
+    <p
+      class="form-msg"
+      id="uploadMsg"
+    ></p>
+
   </form>
 
   <div class="eyebrow">Archive</div>
-  <h2 style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:1.4rem; margin:0.8rem 0 1.5rem;">Existing pieces</h2>
+
+  <h2 style="font-family:'Unbounded',sans-serif; font-weight:600; font-size:1.4rem; margin:0.8rem 0 1.5rem;">
+    Existing pieces
+  </h2>
+
   <table>
-    <thead><tr><th></th><th>Title</th><th>Type</th><th>Tags</th><th></th></tr></thead>
+
+    <thead>
+      <tr>
+        <th></th>
+        <th>Title</th>
+        <th>Type</th>
+        <th>Tags</th>
+        <th></th>
+      </tr>
+    </thead>
+
     <tbody id="rows"></tbody>
+
   </table>
+
+  <button
+    id="logoutBtn"
+    class="btn"
+    style="margin-top:2rem;"
+  >
+    Log out
+  </button>
+
 </div>
 
 <script>
 const API = '/api';
 const OWNER = 'allchemi';
 
-async function loadRows(){
-  const res = await fetch(`${API}/projects?owner=${OWNER}`);
-  const projects = await res.json();
-  document.getElementById('rows').innerHTML = projects.map(p => `
-    <tr>
-      <td>${p.media_type === 'video'
-        ? `<video class="thumb" src="${p.media_path}" muted></video>`
-        : p.media_type === 'youtube'
-        ? `<img class="thumb" src="https://img.youtube.com/vi/${p.media_path}/default.jpg">`
-        : `<img class="thumb" src="${p.media_path}">`}</td>
-      <td>${p.title}</td>
-      <td>${p.media_type}</td>
-      <td>${p.tags || ''}</td>
-      <td><button class="del-btn" data-id="${p.id}">Delete</button></td>
-    </tr>
-  `).join('') || '<tr><td colspan="5">No pieces yet.</td></tr>';
+const loginPanel =
+  document.getElementById('loginPanel');
 
-  document.querySelectorAll('.del-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if(!confirm('Delete this piece?')) return;
-      await fetch(`${API}/projects/${btn.dataset.id}?owner=${OWNER}`, { method: 'DELETE' });
-      loadRows();
-    });
-  });
+const adminPanel =
+  document.getElementById('adminPanel');
+
+const loginForm =
+  document.getElementById('loginForm');
+
+const loginError =
+  document.getElementById('loginError');
+
+function showLogin(message = '') {
+  loginPanel.classList.remove('hidden');
+  adminPanel.classList.add('hidden');
+
+  if (message) {
+    loginError.textContent = message;
+    loginError.classList.remove('hidden');
+  } else {
+    loginError.textContent = '';
+    loginError.classList.add('hidden');
+  }
 }
 
-document.getElementById('uploadForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const form = e.target;
-  const msgEl = document.getElementById('uploadMsg');
-  const fd = new FormData(form);
-  fd.append('owner', OWNER);
-  try{
-    const res = await fetch(`${API}/projects`, { method: 'POST', body: fd });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'Upload failed');
-    msgEl.textContent = 'Uploaded: ' + data.title;
-    msgEl.className = 'form-msg ok';
-    form.reset();
-    loadRows();
-  }catch(err){
-    msgEl.textContent = err.message;
-    msgEl.className = 'form-msg err';
-  }
-});
+function showAdmin() {
+  loginPanel.classList.add('hidden');
+  adminPanel.classList.remove('hidden');
+}
 
-loadRows();
+async function checkAuth() {
+  try {
+    const res = await fetch(
+      `${API}/auth/check`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    );
+
+    if (!res.ok) {
+      showLogin();
+      return false;
+    }
+
+    const data = await res.json();
+
+    if (!data.authenticated) {
+      showLogin();
+      return false;
+    }
+
+    if (data.owner !== OWNER) {
+      showLogin(
+        'This account does not have access to this panel.'
+      );
+
+      return false;
+    }
+
+    showAdmin();
+
+    return true;
+
+  } catch {
+    showLogin(
+      'Unable to verify authentication.'
+    );
+
+    return false;
+  }
+}
+
+loginForm.addEventListener(
+  'submit',
+  async e => {
+    e.preventDefault();
+
+    loginError.textContent = '';
+    loginError.classList.add('hidden');
+
+    const username =
+      document.getElementById('username')
+        .value
+        .trim();
+
+    const password =
+      document.getElementById('password')
+        .value;
+
+    try {
+      const res = await fetch(
+        `${API}/auth`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username,
+            password
+          })
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data.error ||
+          'Authentication failed'
+        );
+      }
+
+      if (data.owner !== OWNER) {
+        await fetch(
+          `${API}/auth`,
+          {
+            method: 'DELETE',
+            credentials: 'include'
+          }
+        );
+
+        throw new Error(
+          'This account does not have access to this panel.'
+        );
+      }
+
+      showAdmin();
+
+      await loadRows();
+
+    } catch (err) {
+      showLogin(err.message);
+    }
+  }
+);
+
+async function loadRows() {
+  try {
+    const res = await fetch(
+      `${API}/projects?owner=${encodeURIComponent(OWNER)}`,
+      {
+        method: 'GET',
+        credentials: 'include'
+      }
+    );
+
+    if (res.status === 401) {
+      showLogin(
+        'Your session has expired.'
+      );
+
+      return;
+    }
+
+    if (res.status === 403) {
+      showLogin(
+        'This account does not have access to this panel.'
+      );
+
+      return;
+    }
+
+    const projects = await res.json();
+
+    if (!Array.isArray(projects)) {
+      showLogin(
+        projects.error ||
+        'Failed to load archive.'
+      );
+
+      return;
+    }
+
+    document.getElementById('rows').innerHTML =
+      projects.map(p => `
+        <tr>
+
+          <td>
+            ${
+              p.media_type === 'video'
+                ? `<video class="thumb" src="${p.media_path}" muted></video>`
+                : p.media_type === 'youtube'
+                ? `<img class="thumb" src="https://img.youtube.com/vi/${p.media_path}/default.jpg">`
+                : `<img class="thumb" src="${p.media_path}">`
+            }
+          </td>
+
+          <td>${p.title}</td>
+
+          <td>${p.media_type}</td>
+
+          <td>${p.tags || ''}</td>
+
+          <td>
+            <button
+              class="del-btn"
+              data-id="${p.id}"
+            >
+              Delete
+            </button>
+          </td>
+
+        </tr>
+      `).join('')
+      ||
+      '<tr><td colspan="5">No pieces yet.</td></tr>';
+
+    document
+      .querySelectorAll('.del-btn')
+      .forEach(btn => {
+
+        btn.addEventListener(
+          'click',
+          async () => {
+
+            if (!confirm(
+              'Delete this piece?'
+            )) {
+              return;
+            }
+
+            try {
+              const res = await fetch(
+                `${API}/projects/${btn.dataset.id}`,
+                {
+                  method: 'DELETE',
+                  credentials: 'include'
+                }
+              );
+
+              if (res.status === 401) {
+                showLogin(
+                  'Your session has expired.'
+                );
+
+                return;
+              }
+
+              if (res.status === 403) {
+                showLogin(
+                  'This account does not have access to this panel.'
+                );
+
+                return;
+              }
+
+              if (!res.ok) {
+                const data =
+                  await res.json();
+
+                alert(
+                  data.error ||
+                  'Delete failed'
+                );
+
+                return;
+              }
+
+              await loadRows();
+
+            } catch {
+              alert(
+                'Delete failed.'
+              );
+            }
+          }
+        );
+      });
+
+  } catch {
+    showLogin(
+      'Failed to load archive.'
+    );
+  }
+}
+
+document
+  .getElementById('uploadForm')
+  .addEventListener(
+    'submit',
+    async e => {
+
+      e.preventDefault();
+
+      const form = e.target;
+
+      const msgEl =
+        document.getElementById(
+          'uploadMsg'
+        );
+
+      const fd =
+        new FormData(form);
+
+      msgEl.textContent = '';
+      msgEl.className =
+        'form-msg';
+
+      try {
+        const res = await fetch(
+          `${API}/projects`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            body: fd
+          }
+        );
+
+        const data =
+          await res.json();
+
+        if (res.status === 401) {
+          showLogin(
+            'Your session has expired.'
+          );
+
+          return;
+        }
+
+        if (res.status === 403) {
+          showLogin(
+            'This account does not have access to this panel.'
+          );
+
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error(
+            data.error ||
+            'Upload failed'
+          );
+        }
+
+        msgEl.textContent =
+          'Uploaded: ' + data.title;
+
+        msgEl.className =
+          'form-msg ok';
+
+        form.reset();
+
+        await loadRows();
+
+      } catch (err) {
+        msgEl.textContent =
+          err.message;
+
+        msgEl.className =
+          'form-msg err';
+      }
+    }
+  );
+
+document
+  .getElementById('logoutBtn')
+  .addEventListener(
+    'click',
+    async () => {
+
+      await fetch(
+        `${API}/auth`,
+        {
+          method: 'DELETE',
+          credentials: 'include'
+        }
+      );
+
+      showLogin();
+    }
+  );
+
+(async () => {
+  const authenticated =
+    await checkAuth();
+
+  if (authenticated) {
+    await loadRows();
+  }
+})();
 </script>
+
 </body>
 </html>

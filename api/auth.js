@@ -1,27 +1,59 @@
+const {
+  setSession,
+  clearSession
+} = require('../lib/auth');
+
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  if (req.method === 'DELETE') {
+    clearSession(res);
+
+    return res.status(200).json({
+      success: true
+    });
+  }
+
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({
+      error: 'Method not allowed'
+    });
   }
 
-  const { password } = req.body;
-  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-  
-  if (!ADMIN_PASSWORD) {
-    return res.status(500).json({ error: 'Admin password not configured' });
-  }
-  
-  if (password === ADMIN_PASSWORD) {
-    const token = Buffer.from(`admin:${Date.now()}:${Math.random()}`).toString('base64');
-    return res.status(200).json({ success: true, token });
+  const {
+    username,
+    password
+  } = req.body || {};
+
+  if (!username || !password) {
+    return res.status(400).json({
+      error: 'Username and password are required'
+    });
   }
 
-  return res.status(401).json({ error: 'Invalid password' });
+  const passwords = {
+    shiryu: process.env.SHIRYU_ADMIN_PASSWORD,
+    allchemi: process.env.ALLCHEMI_ADMIN_PASSWORD
+  };
+
+  if (!passwords[username]) {
+    return res.status(401).json({
+      error: 'Invalid credentials'
+    });
+  }
+
+  if (password !== passwords[username]) {
+    return res.status(401).json({
+      error: 'Invalid credentials'
+    });
+  }
+
+  setSession(res, username);
+
+  return res.status(200).json({
+    success: true,
+    owner: username
+  });
 };
