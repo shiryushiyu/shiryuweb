@@ -1,183 +1,245 @@
-const formidable = require('formidable');
+const { formidable } = require('formidable');
 const fs = require('fs');
 const { put } = require('@vercel/blob');
-const { getPool, ensureSchema } = require('../../lib/db');
-const { setCors } = require('../../lib/cors');
+const { getDb } = require('../../lib/db');
 const { requireAuth } = require('../../lib/auth');
 
-const ALLOWED_EXT = /\.(jpe?g|png|gif|webp|mp4|webm|mov)$/i;
-const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
+const VALID_OWNERS = ['shiryu', 'allchemi'];
 
-function extractYouTubeId(url) {
-  const match = url.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/
-  );
+function parseForm(req) {
+  return new Promise((resolve, reject) => {
+    const form = formidable({
+      multiples: false,
+      keepExtensions: true
+    });
 
-  return match ? match[1] : null;
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      resolve({ fields, files });
+    });
+  });
+}
+
+function getField(fields, name) {
+  const value = fields[name];
+
+  if (Array.isArray(value)) {
+    return value[0] || '';
+  }
+
+  return value || '';
+}
+
+function getFile(files, name) {
+  const value = files[name];
+
+  if (Array.isArray(value)) {
+    return value[0] || null;
+  }
+
+  return value || null;
 }
 
 module.exports = async function handler(req, res) {
-  setCors(res);
-
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   if (req.method === 'GET') {
-    const owner = req.query.owner || 'shiryu';
+    const owner = String(req.query.owner || '');
 
-    if (!['shiryu', 'allchemi'].includes(owner)) {
-      return res.status(400).json({ error: 'Invalid owner' });
+    if (!VALID_OWNERS.includes(owner)) {
+      return res.status(400).json({
+        error: 'Invalid owner'
+      });
     }
 
-    await ensureSchema(owner);
-
-    const pool = getPool(owner);
-    const featured = req.query.featured;
-
-    const { rows } = featured === '1'
-      ? await pool.query(
-          'SELECT * FROM projects WHERE owner = $1 AND featured = 1 ORDER BY sort_order ASC, id DESC',
-          [owner]
-        )
-      : await pool.query(
-          'SELECT * FROM projects WHERE owner = $1 ORDER BY sort_order ASC, id DESC',
-          [owner]
-        );
-
-    return res.status(200).json(rows);
-  }
-
-  if (req.method === 'POST') {
-    const session = requireAuth(req, res);
-
-    if (!session) return;
-
-    const owner = session.owner;
-
     try {
-      const form = formidable({
-        maxFileSize: 100 * 1024 * 1024
-      });
+      const db = getDb(owner);
 
-      const [fields, files] = await form.parse(req);
-
-      const title = fields.title?.[0];
-      const description = fields.description?.[0] || '';
-      const tags = fields.tags?.[0] || '';
-      const featured = Number(fields.featured?.[0] || 0);
-      const sort_order = Number(fields.sort_order?.[0] || 0);
-
-      await ensureSchema(owner);
-
-      const pool = getPool(owner);
-
-      if (!title) {
-        return res.status(400).json({
-          error: 'title is required'
-        });
-      }
-
-      const youtubeUrl = fields.youtube_url?.[0];
-      const mediaFile = files.media?.[0];
-
-      let media_type;
-      let media_path;
-
-      if (youtubeUrl) {
-        const videoId = extractYouTubeId(youtubeUrl);
-
-        if (!videoId) {
-          return res.status(400).json({
-            error: 'Could not parse a YouTube video ID from that URL'
-          });
-        }
-
-        media_type = 'youtube';
-        media_path = videoId;
-      } else if (mediaFile) {
-        if (!ALLOWED_EXT.test(mediaFile.originalFilename)) {
-          return res.status(400).json({
-            error: 'Unsupported file type'
-          });
-        }
-
-        media_type = VIDEO_EXT.test(mediaFile.originalFilename)
-          ? 'video'
-          : 'image';
-
-        const buffer = fs.readFileSync(mediaFile.filepath);
-
-        const blob = await put(
-          `media/${Date.now()}-${mediaFile.originalFilename}`,
-          buffer,
-          {
-            access: 'public',
-            contentType: mediaFile.mimetype
-          }
-        );
-
-        media_path = blob.url;
-      } else {
-        return res.status(400).json({
-          error: 'Provide either a media file or a YouTube URL'
-        });
-      }
-
-      let thumbnail_path = null;
-
-      const thumbFile = files.thumbnail?.[0];
-
-      if (thumbFile) {
-        const thumbBuffer = fs.readFileSync(thumbFile.filepath);
-
-        const thumbBlob = await put(
-          `media/thumb-${Date.now()}-${thumbFile.originalFilename}`,
-          thumbBuffer,
-          {
-            access: 'public',
-            contentType: thumbFile.mimetype
-          }
-        );
-
-        thumbnail_path = thumbBlob.url;
-      }
-
-      const { rows } = await pool.query(
-        `INSERT INTO projects
-        (owner, title, description, tags, media_type, media_path, thumbnail_path, featured, sort_order)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-        RETURNING *`,
-        [
-          owner,
+      const result = await db.query(
+        `
+        SELECT
+          id,
           title,
           description,
           tags,
-          media_type,
           media_path,
-          thumbnail_path,
+          media_type,
           featured,
-          sort_order
-        ]
+          created_at
+        FROM projects
+        WHERE owner = $1
+        ORDER BY created_at DESC
+        `,
+        [owner]
       );
 
-      return res.status(201).json(rows[0]);
-    } catch (err) {
+      return res.status(200).json(result.rows);
+    } catch (error) {
+      console.error('GET /api/projects error:', error);
+
       return res.status(500).json({
-        error: err.message
+        error: 'Failed to load projects'
       });
     }
   }
 
-  res.setHeader('Allow', ['GET', 'POST', 'OPTIONS']);
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      error: 'Method not allowed'
+    });
+  }
 
-  return res.status(405).json({
-    error: `Method ${req.method} not allowed`
-  });
-};
+  const session = requireAuth(req, res);
 
-module.exports.config = {
-  api: {
-    bodyParser: false
+  if (!session) {
+    return;
+  }
+
+  const owner = session.owner;
+
+  if (!VALID_OWNERS.includes(owner)) {
+    return res.status(403).json({
+      error: 'Forbidden'
+    });
+  }
+
+  try {
+    const {
+      fields,
+      files
+    } = await parseForm(req);
+
+    const title = getField(fields, 'title').trim();
+    const description = getField(fields, 'description').trim();
+    const tags = getField(fields, 'tags').trim();
+    const youtubeUrl = getField(fields, 'youtube_url').trim();
+    const featured = getField(fields, 'featured') === '1';
+
+    if (!title) {
+      return res.status(400).json({
+        error: 'Title is required'
+      });
+    }
+
+    const mediaFile = getFile(files, 'media');
+
+    let mediaPath = null;
+    let mediaType = null;
+
+    if (mediaFile) {
+      const filePath =
+        mediaFile.filepath ||
+        mediaFile.path;
+
+      if (!filePath) {
+        return res.status(400).json({
+          error: 'Invalid uploaded file'
+        });
+      }
+
+      const fileName =
+        mediaFile.originalFilename ||
+        mediaFile.newFilename ||
+        'upload';
+
+      const contentType =
+        mediaFile.mimetype ||
+        'application/octet-stream';
+
+      const buffer =
+        await fs.promises.readFile(filePath);
+
+      const blob = await put(
+        `projects/${owner}/${Date.now()}-${fileName}`,
+        buffer,
+        {
+          access: 'public',
+          contentType
+        }
+      );
+
+      mediaPath = blob.url;
+
+      if (contentType.startsWith('video/')) {
+        mediaType = 'video';
+      } else if (contentType.startsWith('image/')) {
+        mediaType = 'image';
+      } else {
+        mediaType = 'file';
+      }
+
+      try {
+        await fs.promises.unlink(filePath);
+      } catch {}
+    } else if (youtubeUrl) {
+      const match = youtubeUrl.match(
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/
+      );
+
+      if (!match) {
+        return res.status(400).json({
+          error: 'Invalid YouTube URL'
+        });
+      }
+
+      mediaPath = match[1];
+      mediaType = 'youtube';
+    }
+
+    if (!mediaPath) {
+      return res.status(400).json({
+        error: 'A media file or YouTube URL is required'
+      });
+    }
+
+    const db = getDb(owner);
+
+    const result = await db.query(
+      `
+      INSERT INTO projects (
+        owner,
+        title,
+        description,
+        tags,
+        media_path,
+        media_type,
+        featured
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING
+        id,
+        owner,
+        title,
+        description,
+        tags,
+        media_path,
+        media_type,
+        featured,
+        created_at
+      `,
+      [
+        owner,
+        title,
+        description,
+        tags,
+        mediaPath,
+        mediaType,
+        featured
+      ]
+    );
+
+    return res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('POST /api/projects error:', error);
+
+    return res.status(500).json({
+      error: error.message || 'Failed to create project'
+    });
   }
 };
