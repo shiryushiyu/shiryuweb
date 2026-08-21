@@ -1,5 +1,13 @@
 const { getPool } = require('../lib/db');
 
+function getHost(connectionString) {
+  try {
+    return new URL(connectionString).hostname;
+  } catch {
+    return 'invalid';
+  }
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).end();
@@ -22,10 +30,7 @@ module.exports = async function handler(req, res) {
       const db = await pool.query(`
         SELECT
           current_database() AS database,
-          current_schema() AS schema,
-          current_user AS user,
-          inet_server_addr() AS server,
-          inet_server_port() AS port
+          current_schema() AS schema
       `);
 
       const projects = await pool.query(`
@@ -36,11 +41,12 @@ module.exports = async function handler(req, res) {
       `, [owner]);
 
       result[owner] = {
+        connectionHost:
+          owner === 'shiryu'
+            ? getHost(process.env.POSTGRES_URL)
+            : getHost(process.env.ALLCHEMI_POSTGRES_URL),
         database: db.rows[0].database,
         schema: db.rows[0].schema,
-        user: db.rows[0].user,
-        server: db.rows[0].server,
-        port: db.rows[0].port,
         projects: projects.rows[0]
       };
     }
