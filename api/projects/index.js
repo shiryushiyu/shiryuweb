@@ -1,7 +1,7 @@
 const formidable = require('formidable');
 const fs = require('fs');
 const { put } = require('@vercel/blob');
-const { pool, ensureSchema } = require('../../lib/db');
+const { getPool, ensureSchema } = require('../../lib/db');
 const { setCors } = require('../../lib/cors');
 
 const ALLOWED_EXT = /\.(jpe?g|png|gif|webp|mp4|webm|mov)$/i;
@@ -16,11 +16,11 @@ module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  await ensureSchema();
-
   if (req.method === 'GET') {
     const featured = req.query.featured;
     const owner = req.query.owner || 'shiryu';
+    await ensureSchema(owner);
+    const pool = getPool(owner);
     const { rows } = featured === '1'
       ? await pool.query('SELECT * FROM projects WHERE owner = $1 AND featured = 1 ORDER BY sort_order ASC, id DESC', [owner])
       : await pool.query('SELECT * FROM projects WHERE owner = $1 ORDER BY sort_order ASC, id DESC', [owner]);
@@ -38,6 +38,8 @@ module.exports = async function handler(req, res) {
       const featured = Number(fields.featured?.[0] || 0);
       const sort_order = Number(fields.sort_order?.[0] || 0);
       const owner = fields.owner?.[0] || 'shiryu';
+      await ensureSchema(owner);
+      const pool = getPool(owner);
 
       if (!title) return res.status(400).json({ error: 'title is required' });
 

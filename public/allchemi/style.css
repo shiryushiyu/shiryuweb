@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.cdnfonts.com/css/creato-display');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root{
   --bg:#060920;
@@ -15,7 +16,7 @@ html{scroll-behavior:smooth;}
 body{
   background:var(--bg);
   color:var(--text);
-  font-family:'Space Grotesk',sans-serif;
+  font-family:'Creato Display', sans-serif;
   overflow-x:hidden;
   background-image:
     linear-gradient(var(--line) 1px, transparent 1px),
@@ -53,7 +54,7 @@ header{
   border-bottom:1px solid transparent;
 }
 .logo{
-  font-family:'Cormorant Garamond',serif;
+  font-family:'Creato Display', sans-serif;
   font-weight:700;
   font-size:1.5rem;
   letter-spacing:0.02em;
@@ -95,14 +96,14 @@ nav a:hover::after{ width:100%; }
   background:radial-gradient(ellipse at 50% 100%, rgba(6,9,32,0.1), var(--bg) 78%);
 }
 .hero h1{
-  font-family:'Cormorant Garamond',serif;
+  font-family:'Creato Display', sans-serif;
   font-weight:700;
   font-size:clamp(2.8rem, 7vw, 5.8rem);
   line-height:1.05;
   letter-spacing:0.01em;
   max-width:18ch;
   margin:1.4rem 0 1.4rem;
-  font-style:italic;
+ 
 }
 .hero h1 .grad{
   color:var(--gold);
@@ -154,9 +155,9 @@ nav a:hover::after{ width:100%; }
 section{ padding:7rem clamp(1.5rem,5vw,4rem); position:relative; }
 .section-head{ margin-bottom:3rem; max-width:60ch; }
 .section-head h2{
-  font-family:'Cormorant Garamond',serif;
+  font-family:'Creato Display', sans-serif;
   font-weight:600;
-  font-style:italic;
+ 
   font-size:clamp(1.9rem,3.4vw,2.7rem);
   margin-top:0.8rem;
 }
@@ -214,7 +215,7 @@ section{ padding:7rem clamp(1.5rem,5vw,4rem); position:relative; }
   font-family:'IBM Plex Mono',monospace; font-size:0.64rem; color:var(--gold);
   text-transform:uppercase; letter-spacing:0.1em;
 }
-.card-info h3{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.15rem; margin-top:0.3rem; font-weight:600; }
+.card-info h3{ font-family:'Creato Display', sans-serif; font-size:1.15rem; margin-top:0.3rem; font-weight:600; }
 .card .media-badge{
   position:absolute; top:0.9rem; right:0.9rem;
   font-family:'IBM Plex Mono',monospace; font-size:0.6rem;
@@ -238,7 +239,7 @@ section{ padding:7rem clamp(1.5rem,5vw,4rem); position:relative; }
 .lightbox-inner{ max-width:min(1100px,92vw); max-height:80vh; width:100%; }
 .lightbox-inner img, .lightbox-inner video{ width:100%; max-height:70vh; object-fit:contain; }
 .lightbox-caption{ margin-top:1.2rem; display:flex; justify-content:space-between; align-items:baseline; gap:1rem; flex-wrap:wrap; }
-.lightbox-caption h3{ font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.3rem; }
+.lightbox-caption h3{ font-family:'Creato Display', sans-serif; font-size:1.3rem; }
 .lightbox-caption p{ color:var(--muted); font-size:0.88rem; max-width:60ch; font-family:'IBM Plex Mono',monospace; }
 .lightbox-close{
   position:absolute; top:1.8rem; right:clamp(1.5rem,5vw,4rem);
@@ -261,7 +262,7 @@ section{ padding:7rem clamp(1.5rem,5vw,4rem); position:relative; }
 .stat-list{ display:flex; flex-direction:column; gap:1.4rem; margin-top:2rem; }
 .stat{ display:flex; justify-content:space-between; border-bottom:1px solid var(--line); padding-bottom:1rem; }
 .stat span{ color:var(--muted); font-size:0.82rem; font-family:'IBM Plex Mono',monospace; }
-.stat b{ font-family:'Cormorant Garamond',serif; color:var(--gold); font-size:1.4rem; font-style:italic; }
+.stat b{ font-family:'Creato Display', sans-serif; color:var(--gold); font-size:1.4rem; }
 
 .workflow-list{
   display:flex; flex-direction:column; gap:0; margin-top:1.6rem;
@@ -283,7 +284,7 @@ section{ padding:7rem clamp(1.5rem,5vw,4rem); position:relative; }
   letter-spacing:0.08em;
 }
 .workflow-step h4{
-  font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:600;
+  font-family:'Creato Display', sans-serif; font-weight:600;
   font-size:1.15rem; margin-top:0.2rem;
 }
 
@@ -294,7 +295,7 @@ form.contact-form{ max-width:640px; display:flex; flex-direction:column; gap:1.2
 .field label{ font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); }
 .field input, .field textarea{
   background:transparent; border:1px solid var(--line); color:var(--text);
-  padding:0.9rem 1rem; font-family:'Space Grotesk',sans-serif; font-size:0.95rem;
+  padding:0.9rem 1rem; font-family:'Creato Display', sans-serif; font-size:0.95rem;
   transition:border-color .2s;
 }
 .field input:focus, .field textarea:focus{ outline:none; border-color:var(--gold); }

@@ -1,7 +1,7 @@
 const formidable = require('formidable');
 const fs = require('fs');
 const { put, del } = require('@vercel/blob');
-const { pool, ensureSchema } = require('../../lib/db');
+const { getPool, ensureSchema } = require('../../lib/db');
 const { setCors } = require('../../lib/cors');
 
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
@@ -15,17 +15,19 @@ module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  await ensureSchema();
   const { id } = req.query;
+  const owner = req.query.owner || 'shiryu';
+  await ensureSchema(owner);
+  const pool = getPool(owner);
 
   if (req.method === 'GET') {
-    const { rows } = await pool.query('SELECT * FROM projects WHERE id = $1', [id]);
+    const { rows } = await pool.query('SELECT * FROM projects WHERE id = $1 AND owner = $2', [id, owner]);
     if (!rows[0]) return res.status(404).json({ error: 'Project not found' });
     return res.status(200).json(rows[0]);
   }
 
   if (req.method === 'DELETE') {
-    const { rows } = await pool.query('SELECT * FROM projects WHERE id = $1', [id]);
+    const { rows } = await pool.query('SELECT * FROM projects WHERE id = $1 AND owner = $2', [id, owner]);
     if (!rows[0]) return res.status(404).json({ error: 'Project not found' });
 
     const existing = rows[0];
@@ -34,13 +36,13 @@ module.exports = async function handler(req, res) {
       if (existing.thumbnail_path) await del(existing.thumbnail_path);
     } catch (_) { /* blob may already be gone, ignore */ }
 
-    await pool.query('DELETE FROM projects WHERE id = $1', [id]);
+    await pool.query('DELETE FROM projects WHERE id = $1 AND owner = $2', [id, owner]);
     return res.status(200).json({ success: true });
   }
 
   if (req.method === 'PUT') {
     try {
-      const { rows } = await pool.query('SELECT * FROM projects WHERE id = $1', [id]);
+      const { rows } = await pool.query('SELECT * FROM projects WHERE id = $1 AND owner = $2', [id, owner]);
       if (!rows[0]) return res.status(404).json({ error: 'Project not found' });
       const existing = rows[0];
 

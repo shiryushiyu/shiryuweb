@@ -1,14 +1,14 @@
-const { pool, ensureSchema } = require('../lib/db');
+const { getPool, ensureSchema } = require('../lib/db');
 const { setCors } = require('../lib/cors');
 
 module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  await ensureSchema();
-
   if (req.method === 'GET') {
     const owner = req.query.owner || 'shiryu';
+    await ensureSchema(owner);
+    const pool = getPool(owner);
     const { rows } = await pool.query('SELECT * FROM messages WHERE owner = $1 ORDER BY id DESC', [owner]);
     return res.status(200).json(rows);
   }
@@ -18,9 +18,12 @@ module.exports = async function handler(req, res) {
     if (!name || !message) {
       return res.status(400).json({ error: 'name and message are required' });
     }
+    const finalOwner = owner || 'shiryu';
+    await ensureSchema(finalOwner);
+    const pool = getPool(finalOwner);
     const { rows } = await pool.query(
       'INSERT INTO messages (owner, name, message) VALUES ($1,$2,$3) RETURNING id',
-      [owner || 'shiryu', name, message]
+      [finalOwner, name, message]
     );
     return res.status(201).json({ id: rows[0].id, success: true });
   }

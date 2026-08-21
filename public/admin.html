@@ -95,7 +95,7 @@ async function loadRows(){
   document.querySelectorAll('.del-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       if(!confirm('Delete this piece?')) return;
-      await fetch(`${API}/projects/${btn.dataset.id}`, { method: 'DELETE' });
+      await fetch(`${API}/projects/${btn.dataset.id}?owner=${OWNER}`, { method: 'DELETE' });
       loadRows();
     });
   });
