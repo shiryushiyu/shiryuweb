@@ -9,3 +9,7 @@ Backend by @shiryushiyu (on discord)
 Server being ran By vercel
 
 Database using NEON and Vercel Blob
+
+Please note that im a beginner at making this kind of stuff
+
+more information for API usage later on.
