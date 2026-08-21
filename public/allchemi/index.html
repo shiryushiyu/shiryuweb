@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AllChemi — Workshop</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">AllChemi<span>.</span></div>
+  <nav>
+    <ul>
+      <li><a href="#work">Work</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="hero">
+  <canvas id="heroCanvas"></canvas>
+  <div class="eyebrow">3D · Modeling · Rigging</div>
+  <h1>Welcome to <span class="grad">AllChemi's</span><br>Workshop</h1>
+  <p class="lede">I do models, rigs and such. I hope you enjoy your stay!</p>
+  <div class="hero-actions">
+    <a href="#work" class="btn primary">View the work</a>
+    <a href="#contact" class="btn">Get in touch</a>
+  </div>
+  <div class="scroll-cue"><div class="line"></div>Scroll</div>
+</section>
+
+<section id="work">
+  <div class="section-head">
+    <div class="eyebrow">Selected work</div>
+    <h2>The workshop floor</h2>
+    <p>Pulled live from the archive — models, rigs, renders, and clips.</p>
+  </div>
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="image">Renders</button>
+    <button class="filter-btn" data-filter="video">Video</button>
+  </div>
+  <div class="grid" id="grid">
+    <div class="empty-state">Loading pieces…</div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="about-grid">
+    <div>
+      <div class="eyebrow">About</div>
+      <h2>Who I am</h2>
+      <p style="color:var(--muted); margin-top:1.2rem; line-height:1.8; max-width:52ch; font-family:'IBM Plex Mono',monospace; font-size:0.9rem;">
+        Hello! I'm AllChemi, a 2D and 3D artist using softwares such as Blender, Krita, and
+        Substance Painter. I'm still building up my portfolio and skills, but I very much
+        enjoy creating models. I work fast depending on the complexity of the task, and I'm
+        always looking forward to improving and learning with every model I render.
+        <br><br>
+        My timezone is GMT+8, and I sleep at 23:30 — I won't respond to messages sent past that time.
+      </p>
+      <div class="stat-list">
+        <div class="stat"><span>Timezone</span><b>GMT +8</b></div>
+        <div class="stat"><span>Software</span><b>Blender / Krita / Substance</b></div>
+        <div class="stat"><span>Pieces archived</span><b id="statCount">—</b></div>
+      </div>
+    </div>
+    <div>
+      <div class="eyebrow">Process</div>
+      <h2 style="margin-bottom:0.5rem;">Workflow</h2>
+      <div class="workflow-list">
+        <div class="workflow-step">
+          <div class="num">01</div>
+          <h4>Concept drawing</h4>
+        </div>
+        <div class="workflow-step">
+          <div class="num">02</div>
+          <h4>Modeling</h4>
+        </div>
+        <div class="workflow-step">
+          <div class="num">03</div>
+          <h4>Polishing of model</h4>
+        </div>
+        <div class="workflow-step">
+          <div class="num">04</div>
+          <h4>UV mapping</h4>
+        </div>
+        <div class="workflow-step">
+          <div class="num">05</div>
+          <h4>Texturing</h4>
+        </div>
+        <div class="workflow-step">
+          <div class="num">06</div>
+          <h4>Polishing of shader nodes</h4>
+        </div>
+        <div class="workflow-step">
+          <div class="num">07</div>
+          <h4>Export</h4>
+        </div>
+      </div>
+      <p style="color:var(--muted); margin-top:1.4rem; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; font-style:italic;">
+        (Unless there's already a concept drawn out — then it's straight to modeling.)
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="section-head">
+    <div class="eyebrow">Say hello</div>
+    <h2>Start a conversation</h2>
+    <p>Messages are saved straight to the workshop's archive.</p>
+  </div>
+  <form class="contact-form" id="contactForm">
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" required>
+    </div>
+    <div class="field">
+      <label for="message">Message</label>
+      <textarea id="message" name="message" required></textarea>
+    </div>
+    <button type="submit" class="btn primary" style="align-self:flex-start;">Send message</button>
+    <p class="form-msg" id="formMsg"></p>
+  </form>
+</section>
+
+<footer>
+  <div>© 2026 AllChemi — built with Vercel + Postgres</div>
+  <div><a href="/allchemi/admin.html">Admin panel →</a></div>
+</footer>
+
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-close" id="lightboxClose">CLOSE ✕</div>
+  <div class="lightbox-nav prev" id="lbPrev">‹</div>
+  <div class="lightbox-nav next" id="lbNext">›</div>
+  <div class="lightbox-inner">
+    <div id="lightboxMedia"></div>
+    <div class="lightbox-caption">
+      <div>
+        <div class="eyebrow" id="lbTag">TAG</div>
+        <h3 id="lbTitle">Title</h3>
+      </div>
+      <p id="lbDesc">Description</p>
+    </div>
+  </div>
+</div>
+
+<script src="hero.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

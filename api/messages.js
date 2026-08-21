@@ -8,18 +8,19 @@ module.exports = async function handler(req, res) {
   await ensureSchema();
 
   if (req.method === 'GET') {
-    const { rows } = await pool.query('SELECT * FROM messages ORDER BY id DESC');
+    const owner = req.query.owner || 'shiryu';
+    const { rows } = await pool.query('SELECT * FROM messages WHERE owner = $1 ORDER BY id DESC', [owner]);
     return res.status(200).json(rows);
   }
 
   if (req.method === 'POST') {
-    const { name, email, message } = req.body || {};
-    if (!name || !email || !message) {
-      return res.status(400).json({ error: 'name, email, and message are required' });
+    const { name, message, owner } = req.body || {};
+    if (!name || !message) {
+      return res.status(400).json({ error: 'name and message are required' });
     }
     const { rows } = await pool.query(
-      'INSERT INTO messages (name, email, message) VALUES ($1,$2,$3) RETURNING id',
-      [name, email, message]
+      'INSERT INTO messages (owner, name, message) VALUES ($1,$2,$3) RETURNING id',
+      [owner || 'shiryu', name, message]
     );
     return res.status(201).json({ id: rows[0].id, success: true });
   }

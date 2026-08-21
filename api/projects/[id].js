@@ -1,4 +1,4 @@
-const { formidable } = require('formidable');
+const formidable = require('formidable');
 const fs = require('fs');
 const { put, del } = require('@vercel/blob');
 const { pool, ensureSchema } = require('../../lib/db');
@@ -9,16 +9,6 @@ const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
 function extractYouTubeId(url) {
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
   return match ? match[1] : null;
-}
-
-function isAuthorized(req) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false;
-  }
-  
-  const token = authHeader.split(' ')[1];
-  return token && token.length > 10;
 }
 
 module.exports = async function handler(req, res) {
@@ -34,18 +24,13 @@ module.exports = async function handler(req, res) {
     return res.status(200).json(rows[0]);
   }
 
-  // Protect DELETE and PUT requests
-  if (!isAuthorized(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
   if (req.method === 'DELETE') {
     const { rows } = await pool.query('SELECT * FROM projects WHERE id = $1', [id]);
     if (!rows[0]) return res.status(404).json({ error: 'Project not found' });
 
     const existing = rows[0];
     try {
-      if (existing.media_path && existing.media_type !== 'youtube') await del(existing.media_path);
+      if (existing.media_path) await del(existing.media_path);
       if (existing.thumbnail_path) await del(existing.thumbnail_path);
     } catch (_) { /* blob may already be gone, ignore */ }
 
@@ -80,7 +65,7 @@ module.exports = async function handler(req, res) {
         if (!videoId) return res.status(400).json({ error: 'Could not parse a YouTube video ID from that URL' });
         media_type = 'youtube';
         media_path = videoId;
-      } else if (mediaFile && mediaFile.size > 0) {
+      } else if (mediaFile) {
         media_type = VIDEO_EXT.test(mediaFile.originalFilename) ? 'video' : 'image';
         const buffer = fs.readFileSync(mediaFile.filepath);
         const blob = await put(`media/${Date.now()}-${mediaFile.originalFilename}`, buffer, {
@@ -90,7 +75,7 @@ module.exports = async function handler(req, res) {
       }
 
       const thumbFile = files.thumbnail?.[0];
-      if (thumbFile && thumbFile.size > 0) {
+      if (thumbFile) {
         const thumbBuffer = fs.readFileSync(thumbFile.filepath);
         const thumbBlob = await put(`media/thumb-${Date.now()}-${thumbFile.originalFilename}`, thumbBuffer, {
           access: 'public', contentType: thumbFile.mimetype

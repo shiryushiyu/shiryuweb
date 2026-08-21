@@ -1,4 +1,4 @@
-const { formidable } = require('formidable');
+const formidable = require('formidable');
 const fs = require('fs');
 const { put } = require('@vercel/blob');
 const { pool, ensureSchema } = require('../../lib/db');
@@ -12,17 +12,6 @@ function extractYouTubeId(url) {
   return match ? match[1] : null;
 }
 
-function isAuthorized(req) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false;
-  }
-  
-  // Simple check - in production, validate the token properly
-  const token = authHeader.split(' ')[1];
-  return token && token.length > 10;
-}
-
 module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -31,15 +20,11 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'GET') {
     const featured = req.query.featured;
+    const owner = req.query.owner || 'shiryu';
     const { rows } = featured === '1'
-      ? await pool.query('SELECT * FROM projects WHERE featured = 1 ORDER BY sort_order ASC, id DESC')
-      : await pool.query('SELECT * FROM projects ORDER BY sort_order ASC, id DESC');
+      ? await pool.query('SELECT * FROM projects WHERE owner = $1 AND featured = 1 ORDER BY sort_order ASC, id DESC', [owner])
+      : await pool.query('SELECT * FROM projects WHERE owner = $1 ORDER BY sort_order ASC, id DESC', [owner]);
     return res.status(200).json(rows);
-  }
-
-  // Protect POST requests
-  if (!isAuthorized(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   if (req.method === 'POST') {
@@ -52,6 +37,7 @@ module.exports = async function handler(req, res) {
       const tags = fields.tags?.[0] || '';
       const featured = Number(fields.featured?.[0] || 0);
       const sort_order = Number(fields.sort_order?.[0] || 0);
+      const owner = fields.owner?.[0] || 'shiryu';
 
       if (!title) return res.status(400).json({ error: 'title is required' });
 
@@ -65,7 +51,7 @@ module.exports = async function handler(req, res) {
         if (!videoId) return res.status(400).json({ error: 'Could not parse a YouTube video ID from that URL' });
         media_type = 'youtube';
         media_path = videoId;
-      } else if (mediaFile && mediaFile.size > 0) {
+      } else if (mediaFile) {
         if (!ALLOWED_EXT.test(mediaFile.originalFilename)) {
           return res.status(400).json({ error: 'Unsupported file type' });
         }
@@ -83,7 +69,7 @@ module.exports = async function handler(req, res) {
 
       let thumbnail_path = null;
       const thumbFile = files.thumbnail?.[0];
-      if (thumbFile && thumbFile.size > 0) {
+      if (thumbFile) {
         const thumbBuffer = fs.readFileSync(thumbFile.filepath);
         const thumbBlob = await put(
           `media/thumb-${Date.now()}-${thumbFile.originalFilename}`,
@@ -94,9 +80,9 @@ module.exports = async function handler(req, res) {
       }
 
       const { rows } = await pool.query(
-        `INSERT INTO projects (title, description, tags, media_type, media_path, thumbnail_path, featured, sort_order)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-        [title, description, tags, media_type, media_path, thumbnail_path, featured, sort_order]
+        `INSERT INTO projects (owner, title, description, tags, media_type, media_path, thumbnail_path, featured, sort_order)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+        [owner, title, description, tags, media_type, media_path, thumbnail_path, featured, sort_order]
       );
 
       return res.status(201).json(rows[0]);

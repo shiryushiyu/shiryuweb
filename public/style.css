@@ -280,33 +280,3 @@ footer a:hover{ color:var(--cyan); }
 @media (prefers-reduced-motion: reduce){
   *{ animation:none !important; transition:none !important; }
 }
-
-.youtube-thumb {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.youtube-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.play-button {
-  transition: all 0.3s ease;
-}
-
-.card:hover .play-button {
-  background: #ff0000 !important;
-  transform: translate(-50%, -50%) scale(1.1) !important;
-}
-
-/* Lightbox iframe styling */
-.lightbox-inner iframe {
-  width: 100%;
-  max-height: 70vh;
-  border: none;
-  border-radius: 2px;
-}
